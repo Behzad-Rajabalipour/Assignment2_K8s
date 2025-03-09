@@ -64,7 +64,7 @@ jobs:
     name: Build and Push Docker Images to ECR
     needs: infrastructure
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -84,6 +84,6 @@ jobs:
       - name: Build and Push Docker Images
         run: |
           for service in web_app dbs_app; do
-            docker build -t 097656145156.dkr.ecr.us-east-1.amazonaws.com//$service:latest -f Dockerfile_${service} .
-            docker push 097656145156.dkr.ecr.us-east-1.amazonaws.com//$service:latest
+            docker build -t 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:latest -f Dockerfile_${service} .
+            docker push 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:latest
           done
