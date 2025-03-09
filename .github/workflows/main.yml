@@ -99,6 +99,10 @@ jobs:
         - name: Checkout Repository
           uses: actions/checkout@v3
 
+        - name: Authenticate Docker to AWS ECR
+          run: |
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
+
         - name: Set up SSH
           run: |
             mkdir -p ~/.ssh
