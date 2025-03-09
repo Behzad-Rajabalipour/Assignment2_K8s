@@ -110,7 +110,7 @@ jobs:
             # ssh -o StrictHostKeyChecking=no $SSH_USER@${{ needs.infrastructure.outputs.EC2_PUBLIC_IP }} << 'EOF'
         - name: SSH into EC2 and Run docker-compose
           run: |
-            ssh -o StrictHostKeyChecking=no $SSH_USER@100.26.35.132 << 'EOF'
+            ssh -o StrictHostKeyChecking=no -i $EC2_KEY $SSH_USER@$EC2_PUBLIC_IP << 'EOF'
               cd /path/to/your/project
               docker-compose down
               docker-compose up -d
