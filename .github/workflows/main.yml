@@ -29,9 +29,9 @@ jobs:
 
       - name: Debug AWS Credentials
         run: |
-          echo "AWS Access Key: $AWS_ACCESS_KEY_ID"
-          echo "AWS Secret Key: $AWS_SECRET_ACCESS_KEY"
-          echo "AWS Session Token: $AWS_SESSION_TOKEN"
+          echo "AWS Access Key: ${{ secrets.AWS_ACCESS_KEY_ID }}"
+          echo "AWS Secret Key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          echo "AWS Session Token: ${{ secrets.AWS_SESSION_TOKEN }}"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
