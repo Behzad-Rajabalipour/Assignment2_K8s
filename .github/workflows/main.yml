@@ -12,14 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
       AWS_REGION: us-east-1  # Set the region here
     
     outputs:
-      EC2_PUBLIC_IP: ${{ env.EC2_PUBLIC_IP }}
+      EC2_PUBLIC_IP: ${{ steps.capture_terraform_outputs.outputs.ec2_public_ip }}
 
     steps:
       - name: Checkout Repository
@@ -53,8 +52,7 @@ jobs:
 
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
-        run: |
-          echo "EC2_PUBLIC_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_ENV
+        run: echo "::set-output name=ec2_public_ip::$(terraform output -raw ec2_public_ip)"
         working-directory: ./terraform
 
 
@@ -64,7 +62,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
@@ -92,9 +89,8 @@ jobs:
       runs-on: ubuntu-latest
       environment: staging
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        EC2_PUBLIC_IP: ${{ env.EC2_PUBLIC_IP }}
+        EC2_PUBLIC_IP: ${{ needs.infrastructure.outputs.EC2_PUBLIC_IP }}
         SSH_USER: ec2-user  # Adjust based on your EC2 instance's user
         AWS_REGION: us-east-1
 
