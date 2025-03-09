@@ -85,7 +85,7 @@ jobs:
 
   deploy_to_ec2:
       name: Deploy to EC2 and Run docker-compose
-      needs: docker_build_push
+      # needs: docker_build_push
       runs-on: ubuntu-latest
       environment: staging
       env:
