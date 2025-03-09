@@ -17,7 +17,7 @@ services:
       - network1
 
   my_app_2:
-    image: "${ECR_REGISTRY}/myapp:${IMAGE_TAG}"
+    image: "097656145156.dkr.ecr.us-east-1.amazonaws.com/web_app:latest"
     ports:
       - "8082:8080"
     environment:
@@ -64,3 +64,4 @@ volumes:
 networks:
   network1:  # This was missing in your original code
     name: my_chosen_network  # Optional: You can give your network a specific name
+
