@@ -12,9 +12,6 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      ECR_USER_ACCESS_KEY: ${{ steps.capture_terraform_outputs.outputs.ECR_USER_ACCESS_KEY }}
-      ECR_USER_SECRET_KEY: ${{ steps.capture_terraform_outputs.outputs.ECR_USER_SECRET_KEY }}
-      ECR_SESSION_TOKEN: ${{ steps.capture_terraform_outputs.outputs.ECR_SESSION_TOKEN }}
       EC2_PUBLIC_IP: ${{ env.EC2_PUBLIC_IP }}
 
     steps:
@@ -55,9 +52,6 @@ jobs:
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
         run: |
-          echo "ECR_USER_ACCESS_KEY=$(terraform output -raw ecr_user_access_key_id)" >> $GITHUB_ENV
-          echo "ECR_USER_SECRET_KEY=$(terraform output -raw ecr_user_secret_access_key)" >> $GITHUB_ENV
-          echo "AWS_SESSION_TOKEN=$(terraform output -raw aws_session_token)" >> $GITHUB_ENV
           echo "EC2_PUBLIC_IP=$(terraform output -raw ec2_public_ip)" >> $GITHUB_ENV
 
   docker_build_push:
