@@ -45,10 +45,12 @@ jobs:
       - name: Terraform Plan
         run: terraform plan
         working-directory: ./terraform
+        # working-directory: ./tef_test
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
         working-directory: ./terraform
+        # working-directory: ./tef_test
 
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
