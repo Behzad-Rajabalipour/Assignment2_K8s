@@ -118,9 +118,13 @@ data "aws_iam_role" "lab_role" {
   name = "LabRole"
 }
 
-resource "aws_iam_instance_profile" "lab_instance_profile" {
+# resource "aws_iam_instance_profile" "lab_instance_profile" {
+#   name = "LabInstanceProfile"
+#   role = data.aws_iam_role.lab_role.name
+# }
+
+data "aws_iam_instance_profile" "existing_profile" {
   name = "LabInstanceProfile"
-  role = data.aws_iam_role.lab_role.name
 }
 
 # since it already create, it needs to be commented to avoid showing existence error
@@ -138,7 +142,7 @@ resource "aws_instance" "worker_node" {
   security_groups        = [aws_security_group.worker_node_sg.id]
   associate_public_ip_address = true
 
-  iam_instance_profile   = aws_iam_instance_profile.lab_instance_profile.name
+  iam_instance_profile   = aws_iam_instance_profile.existing_profile.name
 
   user_data = <<-EOF
     #!/bin/bash
