@@ -53,10 +53,18 @@ jobs:
         # working-directory: ./terraform
         working-directory: ./tef_test
 
+      - name: Debug Terraform Output
+        run: |
+          terraform output -raw ec2_public_ip
+        working-directory: ./tef_test
+        shell: bash
+
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
-        run: echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_ENV"
-        working-directory: ./tef_test
+        run: |
+          IP=$(terraform output -raw ec2_public_ip | awk '{print $1}')
+          echo "ec2_public_ip=$IP" >> "$GITHUB_ENV"
+        working-directory: ./terraform
         shell: bash
         # working-directory: ./terraform
 
