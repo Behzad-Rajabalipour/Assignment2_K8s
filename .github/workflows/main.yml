@@ -55,9 +55,14 @@ jobs:
 
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
-        run: echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
+        run: echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_ENV"
         working-directory: ./tef_test
+        shell: bash
         # working-directory: ./terraform
+
+      - name: Print EC2 Public IP
+        run: echo "EC2 Public IP is ${{ env.ec2_public_ip }}"
+
 
   # docker_build_push:
   #   name: Build and Push Docker Images to ECR
