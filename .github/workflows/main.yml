@@ -43,10 +43,10 @@ jobs:
         working-directory: ./tef_test
         # working-directory: ./terraform
 
-      - name: Terraform Plan
-        run: terraform plan
-        # working-directory: ./terraform
-        working-directory: ./tef_test
+      # - name: Terraform Plan
+      #   run: terraform plan
+      #   # working-directory: ./terraform
+      #   working-directory: ./tef_test
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
@@ -63,14 +63,14 @@ jobs:
         id: capture_terraform_outputs
         run: |
           IP=$(terraform output -raw ec2_public_ip | tr -d '\r' | tr -d '\n')
-          echo "ec2_public_ip=$IP" >> "$GITHUB_ENV"
+          echo "EC2_PUBLIC_IP=$IP" >> "$GITHUB_ENV"
+          echo "::set-output name=ec2_public_ip::$IP"
+          echo "Captured EC2 Public IP: $IP"  # Debugging line
         working-directory: ./tef_test
         shell: bash
 
       - name: Print EC2 Public IP
-        run: echo "EC2 Public IP is ${{ env.ec2_public_ip }}"
-        env:
-          EC2_PUBLIC_IP: ${{ env.ec2_public_ip }}
+        run: echo "EC2 Public IP is ${{ env.EC2_PUBLIC_IP }}"
 
   # docker_build_push:
   #   name: Build and Push Docker Images to ECR
@@ -116,6 +116,14 @@ jobs:
       steps:
         - name: Checkout Repository
           uses: actions/checkout@v3
+
+        - name: Debug EC2 Public IP Before SSH
+          run: |
+            echo "EC2_PUBLIC_IP is set to: $EC2_PUBLIC_IP"
+            if [ -z "$EC2_PUBLIC_IP" ]; then
+              echo "❌ ERROR: EC2_PUBLIC_IP is empty! Check Terraform output."
+              exit 1
+            fi
 
         # - name: Authenticate Docker to AWS ECR
         #   run: |
