@@ -52,13 +52,12 @@ jobs:
 
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
-        run: echo "::set-output name=ec2_public_ip::$(terraform output -raw ec2_public_ip)"
+        run: echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
         working-directory: ./terraform
 
 
   docker_build_push:
     name: Build and Push Docker Images to ECR
-    needs: infrastructure
     runs-on: ubuntu-latest
     environment: staging
     env:
@@ -84,7 +83,7 @@ jobs:
 
   deploy_to_ec2:
       name: Deploy to EC2 and Run docker-compose
-      needs: docker_build_push
+      needs: [infrastructure, docker_build_push]
       runs-on: ubuntu-latest
       environment: staging
       env:
@@ -115,7 +114,7 @@ jobs:
             # ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@$EC2_PUBLIC_IP << 'EOF'
         - name: SSH into EC2 and Run docker-compose
           run: |
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ needs.infrastructure.outputs.EC2_PUBLIC_IP }} << 'EOF'
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@$EC2_PUBLIC_IP << 'EOF'
               cd app
               aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
               docker-compose down
