@@ -1,3 +1,13 @@
+# Data source for AMI id
+data "aws_ami" "latest_amazon_linux" {
+  owners      = ["amazon"]
+  most_recent = true
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
 # Fetch existing VPC by filtering with a known tag or name
 data "aws_vpc" "existing" {
   filter {
@@ -6,6 +16,7 @@ data "aws_vpc" "existing" {
   }
 }
 
+
 # Fetch existing Security Group by name
 data "aws_security_group" "existing_sg" {
   filter {
@@ -13,11 +24,6 @@ data "aws_security_group" "existing_sg" {
     values = ["worker-node-sg"]
   }
   vpc_id = data.aws_vpc.existing.id
-}
-
-# Fetch existing IAM Instance Profile
-data "aws_iam_instance_profile" "existing_profile" {
-  name = "LabInstanceProfile"
 }
 
 # Fetch existing subnet (modify filter as needed)
