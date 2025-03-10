@@ -129,10 +129,9 @@ jobs:
           # ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@$EC2_PUBLIC_IP << 'EOF'
         - name: SSH into EC2 and Run docker-compose
           run: |
-            REGION="${{ env.AWS_REGION }}"
             ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
               cd /home/ec2-user/app
-              aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
+              aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
               docker-compose down
               docker-compose up -d
             EOF
