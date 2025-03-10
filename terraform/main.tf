@@ -113,6 +113,22 @@ resource "aws_security_group" "worker_node_sg" {
   }
 }
 
+#----------------------------------------------
+data "aws_iam_role" "lab_role" {
+  name = "LabRole"
+}
+
+resource "aws_iam_instance_profile" "lab_instance_profile" {
+  name = "LabInstanceProfile"
+  role = data.aws_iam_role.lab_role.name
+}
+
+# since it already create, it needs to be commented to avoid showing existence error
+# import {
+#   to = aws_iam_instance_profile.lab_instance_profile
+#   id = "LabInstanceProfile"
+# }
+
 # EC2 Instance with the created key pair
 resource "aws_instance" "worker_node" {
   ami                    = data.aws_ami.latest_amazon_linux.id
@@ -121,6 +137,8 @@ resource "aws_instance" "worker_node" {
   subnet_id              = aws_subnet.public_subnet.id  # Use the public subnet ID created above
   security_groups        = [aws_security_group.worker_node_sg.id]
   associate_public_ip_address = true
+
+  iam_instance_profile   = aws_iam_instance_profile.lab_instance_profile.name
 
   user_data = <<-EOF
     #!/bin/bash
