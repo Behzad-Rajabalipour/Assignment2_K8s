@@ -142,7 +142,7 @@ resource "aws_instance" "worker_node" {
   security_groups        = [aws_security_group.worker_node_sg.id]
   associate_public_ip_address = true
 
-  iam_instance_profile   = aws_iam_instance_profile.existing_profile.name
+  iam_instance_profile   = data.aws_iam_instance_profile.existing_profile.name
 
   user_data = <<-EOF
     #!/bin/bash

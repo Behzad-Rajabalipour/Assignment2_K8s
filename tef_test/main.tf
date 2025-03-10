@@ -2,7 +2,7 @@
 data "aws_vpc" "existing" {
   filter {
     name   = "tag:Name"
-    values = ["your-existing-vpc-name"]
+    values = ["main-vpc"]
   }
 }
 
@@ -10,24 +10,38 @@ data "aws_vpc" "existing" {
 data "aws_security_group" "existing_sg" {
   filter {
     name   = "group-name"
-    values = ["your-existing-security-group-name"]
+    values = ["worker-node-sg"]
   }
   vpc_id = data.aws_vpc.existing.id
 }
 
 # Fetch existing IAM Instance Profile
 data "aws_iam_instance_profile" "existing_profile" {
-  name = "your-existing-instance-profile-name"
+  name = "LabInstanceProfile"
 }
 
 # Fetch existing subnet (modify filter as needed)
 data "aws_subnet" "existing_public_subnet" {
   filter {
     name   = "tag:Name"
-    values = ["your-existing-subnet-name"]
+    values = ["public-subnet"]
   }
   vpc_id = data.aws_vpc.existing.id
 }
+
+data "aws_iam_role" "lab_role" {
+  name = "LabRole"
+}
+
+# resource "aws_iam_instance_profile" "lab_instance_profile" {
+#   name = "LabInstanceProfile"
+#   role = data.aws_iam_role.lab_role.name
+# }
+
+data "aws_iam_instance_profile" "existing_profile" {
+  name = "LabInstanceProfile"
+}
+
 
 # EC2 Instance with existing resources
 resource "aws_instance" "worker_node" {
