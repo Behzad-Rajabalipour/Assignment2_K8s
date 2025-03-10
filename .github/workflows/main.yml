@@ -18,7 +18,7 @@ jobs:
       AWS_REGION: us-east-1  # Set the region here
     
     outputs:
-      EC2_PUBLIC_IP: ${{ steps.capture_terraform_outputs.outputs.ec2_public_ip }}
+      EC2_PUBLIC_IP: ${{ steps.capture_terraform_outputs.outputs.EC2_PUBLIC_IP }}
 
     steps:
       - name: Checkout Repository
@@ -37,6 +37,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: '1.5.0'
+          terraform_wrapper: false
 
       - name: Terraform Init
         run: terraform init
@@ -53,19 +54,10 @@ jobs:
         # working-directory: ./terraform
         working-directory: ./tef_test
 
-      - name: Debug Terraform Output
-        run: |
-          terraform output -raw ec2_public_ip
-        working-directory: ./tef_test
-        shell: bash
-
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
         run: |
-          IP=$(terraform output -raw ec2_public_ip | tr -d '\r' | tr -d '\n')
-          echo "EC2_PUBLIC_IP=$IP" >> "$GITHUB_ENV"
-          echo "::set-output name=ec2_public_ip::$IP"
-          echo "Captured EC2 Public IP: $IP"  # Debugging line
+          echo "EC2_PUBLIC_IP=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
         working-directory: ./tef_test
         shell: bash
 
