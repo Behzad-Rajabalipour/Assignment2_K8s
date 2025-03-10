@@ -46,8 +46,8 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan
-        # working-directory: ./terraform
-        working-directory: ./tef_test
+        working-directory: ./terraform
+        # working-directory: ./tef_test
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
