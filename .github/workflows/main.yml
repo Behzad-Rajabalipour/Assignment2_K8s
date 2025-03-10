@@ -18,7 +18,7 @@ jobs:
       AWS_REGION: us-east-1  # Set the region here
     
     outputs:
-      EC2_PUBLIC_IP: ${{ steps.capture_terraform_outputs.outputs.EC2_PUBLIC_IP }}
+      ec2_public_ip: ${{ steps.capture_terraform_outputs.outputs.ec2_public_ip  }}
 
     steps:
       - name: Checkout Repository
@@ -57,12 +57,9 @@ jobs:
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
         run: |
-          echo "EC2_PUBLIC_IP=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
+          echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
         working-directory: ./tef_test
         shell: bash
-
-      - name: Print EC2 Public IP
-        run: echo "EC2 Public IP is ${{ env.EC2_PUBLIC_IP }}"
 
   # docker_build_push:
   #   name: Build and Push Docker Images to ECR
@@ -102,20 +99,15 @@ jobs:
         AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         AWS_REGION: us-east-1  # Set the region here
         EC2_KEY: ${{ secrets.EC2_Key }}
-        EC2_PUBLIC_IP: ${{ needs.infrastructure.outputs.EC2_PUBLIC_IP }}
+        EC2_PUBLIC_IP: ${{ needs.infrastructure.outputs.ec2_public_ip }}
         # EC2_PUBLIC_IP: "100.26.35.132"
 
       steps:
         - name: Checkout Repository
           uses: actions/checkout@v3
 
-        - name: Debug EC2 Public IP Before SSH
-          run: |
-            echo "EC2_PUBLIC_IP is set to: $EC2_PUBLIC_IP"
-            if [ -z "$EC2_PUBLIC_IP" ]; then
-              echo "❌ ERROR: EC2_PUBLIC_IP is empty! Check Terraform output."
-              exit 1
-            fi
+        - name: Print EC2 Public IP
+          run: echo "EC2 Public IP is ${{ env.EC2_PUBLIC_IP }}"
 
         # - name: Authenticate Docker to AWS ECR
         #   run: |
