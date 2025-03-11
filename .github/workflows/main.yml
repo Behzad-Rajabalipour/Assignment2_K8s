@@ -171,14 +171,23 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
             set -e  # Exit on error
-            
+
             cd /home/ec2-user/app
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
             
             # Set up Kubernetes Tools, Login ECR Registery, Create NameSpaces
             cd /home/ec2-user/app/kubernetes/installation
-            sh init_kind.sh
+            sh init_kind.sh 
             sh ECR-Registery-NameSpaces.sh
+
+            for i in {1..10}; do
+              kubectl get nodes &> /dev/null && break
+              echo "Waiting for Kind cluster to be ready..."
+              sleep 10
+            done
+
+            kubectl get nodes -o wide
+            kubectl describe nodes
 
             # Add explicit namespace flag to secret creation
             kubectl create secret generic mysql-secret -n sqldb \
@@ -188,7 +197,14 @@ jobs:
 
             # Deploy MySQL Database
             cd /home/ec2-user/app/kubernetes/mysqldb
-            kubectl apply -f deployment.yaml -f replicaset.yaml -f service.yaml -n sqldb
+            # Deploy MySQL resources with error handling
+            kubectl apply -f deployment.yaml -n sqldb || { echo "Failed to apply deployment"; exit 1; }
+            kubectl apply -f replicaset.yaml -n sqldb || { echo "Failed to apply replicaset"; exit 1; }
+            kubectl apply -f service.yaml -n sqldb || { echo "Failed to apply service"; exit 1; }
+
+            # Verify deployment
+            kubectl get pods -n sqldb
+            kubectl describe pod -n sqldb | grep -A10 Name
 
             # Wait for MySQL readiness
             kubectl wait --for=condition=Ready pod -n sqldb --selector=app=mysql --timeout=120s
