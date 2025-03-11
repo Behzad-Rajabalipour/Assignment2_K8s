@@ -6,6 +6,7 @@ metadata:
 spec:
   imagePullSecrets:        # <-- Correct position here (pod spec level)
   - name: ecr-secret
+  serviceAccountName: default  # Explicitly reference the service account
   containers:
     - name: mysql-container
       image: '097656145156.dkr.ecr.us-east-1.amazonaws.com/dbs_app:v1'

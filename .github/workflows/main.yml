@@ -180,10 +180,11 @@ jobs:
             kubectl create secret generic mysql-secret \
             --from-literal=MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
             --dry-run=client -o yaml | kubectl apply -f -
+            
 
             # Deploy MySQL Database
             cd /home/ec2-user/app/kubernetes/mysqldb
-            kubectl apply -f deployment.yaml -f pod.yaml -f replicaset.yaml -f service.yaml -n sqldb
+            kubectl apply -f deployment.yaml -f replicaset.yaml -f service.yaml -n sqldb
 
             # Wait for MySQL readiness
             kubectl wait --for=condition=Ready pod -n sqldb --selector=app=mysql --timeout=120s
