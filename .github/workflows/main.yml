@@ -166,8 +166,12 @@ jobs:
     
       # ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@$EC2_PUBLIC_IP << 'EOF'
       - name: SSH into EC2 and Run docker-compose
+        env:
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
+            set -e  # Exit on error
+            
             cd /home/ec2-user/app
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
             
@@ -178,7 +182,7 @@ jobs:
 
             # Add explicit namespace flag to secret creation
             kubectl create secret generic mysql-secret -n sqldb \
-              --from-literal=MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              --from-literal=MYSQL_PASSWORD="$MYSQL_PASSWORD" \
               --dry-run=client -o yaml | kubectl apply -f -
             
 
