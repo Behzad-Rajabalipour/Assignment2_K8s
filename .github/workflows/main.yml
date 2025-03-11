@@ -176,10 +176,10 @@ jobs:
             sh init_kind.sh
             sh ECR-Registery-NameSpaces.sh
 
-            # Create Kubernetes Secret
-            kubectl create secret generic mysql-secret \
-            --from-literal=MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
-            --dry-run=client -o yaml | kubectl apply -f -
+            # Add explicit namespace flag to secret creation
+            kubectl create secret generic mysql-secret -n sqldb \
+              --from-literal=MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              --dry-run=client -o yaml | kubectl apply -f -
             
 
             # Deploy MySQL Database
