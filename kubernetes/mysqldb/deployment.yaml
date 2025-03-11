@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  namespace: sqldb
+  labels:
+    app: mysql   # Must match selector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql  # Must match pod labels
+  template:
+    metadata:
+      labels:
+        app: mysql    # Critical for selector
+    spec:
+      imagePullSecrets:       
+      - name: ecr-secret
+      containers:
+        - name: mysql-container
+          image: '097656145156.dkr.ecr.us-east-1.amazonaws.com/dbs_app:v1'
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_PASSWORD
+          ports:
+            - containerPort: 3306

@@ -25,7 +25,7 @@ variable "availability_zone" {
 variable "instance_type" {
   description = "Instance type for the worker node"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.medium"
 }
 
 variable "public_key" {

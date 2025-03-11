@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql-pod
+  namespace: sqldb
+spec:
+  imagePullSecrets:        # <-- Correct position here (pod spec level)
+  - name: ecr-secret
+  containers:
+    - name: mysql-container
+      image: '097656145156.dkr.ecr.us-east-1.amazonaws.com/dbs_app:v1'
+      env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_PASSWORD
+      ports:
+        - containerPort: 3306

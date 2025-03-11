@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp-pod
+  namespace: webapp
+spec:
+  imagePullSecrets:       
+  - name: ecr-secret2
+  containers:
+    - name: webapp-container
+      image: '097656145156.dkr.ecr.us-east-1.amazonaws.com/web_app:v1'
+      env:
+        - name: DBPWD
+          value: mydb
+          # valueFrom:
+          #   secretKeyRef:
+          #     name: secrets
+          #     key: dbpass
+        - name: DBHOST
+          value: "mysql-service.sqldb"
+        - name: DBPORT
+          value: "3306"
+        - name: APP_COLOR
+          value: pink
+      ports:
+        - containerPort: 8080

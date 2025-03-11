@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: webapp-replicaset
+  namespace: webapp
+  labels:
+    app: employees
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: employees
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: employees
+        version: v1
+    spec:
+      imagePullSecrets:       
+      - name: ecr-secret2
+      containers:
+        - name: webapp-container
+          image: '097656145156.dkr.ecr.us-east-1.amazonaws.com/web_app:v1'
+          env:
+            - name: DBPWD
+              value: mydb
+              # valueFrom:
+              #   secretKeyRef:
+              #     name: secrets
+              #     key: dbpass
+            - name: DBHOST
+              value: "mysql-service.sqldb"
+            - name: DBPORT
+              value: '3306'
+            - name: APP_COLOR
+              value: pink
+          ports:
+            - containerPort: 8080

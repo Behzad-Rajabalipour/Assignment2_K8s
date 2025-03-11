@@ -41,25 +41,25 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./tef_test
-        # working-directory: ./terraform
+        # working-directory: ./tef_test
+        working-directory: ./terraform
 
       - name: Terraform Plan
         run: terraform plan
-        # working-directory: ./terraform
-        working-directory: ./tef_test
+        working-directory: ./terraform
+        # working-directory: ./tef_test
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
-        # working-directory: ./terraform
-        working-directory: ./tef_test
+        working-directory: ./terraform
+        # working-directory: ./tef_test
 
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
         run: |
           echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
-        working-directory: ./tef_test
-        # working-directory: ./terraform
+        # working-directory: ./tef_test
+        working-directory: ./terraform
         shell: bash
 
   docker_build_push:
@@ -84,14 +84,13 @@ jobs:
       - name: Build and Push Docker Images
         run: |
           for service in web_app dbs_app; do
-            docker build -t 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:latest -f Dockerfile_${service} .
-            docker push 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:latest
+            docker build -t 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:v1 -f Dockerfile_${service} .
+            docker push 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:v1
           done
 
   deploy_to_ec2:
       name: Deploy to EC2 and Run docker-compose
       needs: [infrastructure, docker_build_push]
-      # needs: infrastructure
       runs-on: ubuntu-latest
       environment: staging
       env:
@@ -101,7 +100,6 @@ jobs:
         AWS_REGION: us-east-1  # Set the region here
         EC2_KEY: ${{ secrets.EC2_Key }}
         EC2_PUBLIC_IP: ${{ needs.infrastructure.outputs.ec2_public_ip }}
-        # EC2_PUBLIC_IP: "100.26.35.132"
 
       steps:
         - name: Checkout Repository
@@ -109,10 +107,6 @@ jobs:
 
         - name: Print EC2 Public IP
           run: echo "EC2 Public IP is ${{ env.EC2_PUBLIC_IP }}"
-
-        # - name: Authenticate Docker to AWS ECR
-        #   run: |
-        #     aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
 
         - name: Set up SSH
           run: |
@@ -127,7 +121,6 @@ jobs:
             echo "Waiting for EC2 instance setup to complete..."
             sleep 180  # Wait for 3 minutes
 
-          # ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@$EC2_PUBLIC_IP << 'EOF'
         - name: SSH into EC2 and Run docker-compose
           run: |
             ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
@@ -136,4 +129,97 @@ jobs:
               docker-compose down
               docker-compose up -d
             EOF
-         
+            
+  deploy_to_kubernetes:
+    name: Deploy to Kubernetes Cluster
+    needs: [infrastructure, docker_build_push]
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      EC2_KEY: ${{ secrets.EC2_Key }}
+      EC2_PUBLIC_IP: ${{ needs.infrastructure.outputs.ec2_public_ip }}
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Print EC2 Public IP
+        run: echo "EC2 Public IP is ${{ env.EC2_PUBLIC_IP }}"
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$EC2_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+        env:
+          EC2_KEY: ${{ secrets.EC2_Key }}
+      
+      # ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@$EC2_PUBLIC_IP << 'EOF'
+      - name: SSH into EC2 and Run docker-compose
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
+            cd /home/ec2-user/app
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
+            
+            # Set up Kubernetes Tools, Login ECR Registery, Create NameSpaces
+            cd ./kubernetes/installation
+            sh init_kind.sh
+            sh ECR-Registery-NameSpaces.sh
+
+            # Create Kubernetes Secret
+            kubectl create secret generic mysql-secret \
+            --from-literal=MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+            # Deploy MySQL Database
+            cd /home/ec2-user/app/kubernetes/mysql
+            kubectl apply -f deployments.yaml -f pod.yaml -f replicaset.yaml -f service.yaml -n sqldb
+
+            # Wait for MySQL readiness
+            kubectl wait --for=condition=Ready pod -n sqldb --selector=app=mysql --timeout=120s
+          EOF
+
+      # - name: Set up Kubernetes Tools, Login ECR Registery, Create NameSpaces
+      #   working-directory: ./kubernetes/installation
+      #   run: |
+      #     sh init_kind.sh
+      #     sh ECR-Registery-NameSpaces.sh
+      
+      # - name: Create Kubernetes Secret
+      #   run: |
+      #     kubectl create secret generic mysql-secret \
+      #       --from-literal=MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
+      #       --dry-run=client -o yaml | kubectl apply -f -
+        
+      # - name: Deploy MySQL Database
+      #   working-directory: ./kubernetes/mysql
+      #   run: kubectl apply -f deployments.yaml -f pod.yaml -f replicaset.yaml -f service.yaml -n sqldb
+      
+      # - name: Wait for MySQL readiness
+      #   run: kubectl wait --for=condition=Ready pod -n sqldb --selector=app=mysql --timeout=120s
+
+      # - name: Deploy WebApp v1
+      #   working-directory: ./kubernetes/webapp/v1
+      #   run: |
+      #     kubectl apply -f deployments.yaml -f service.yaml -n webapp
+      #     kubectl wait --for=condition=Ready pod -n webapp --selector=app=employees --timeout=120s
+
+      # - name: Deploy WebApp v2
+      #   working-directory: ./kubernetes/webapp/v2
+      #   run: |
+      #     kubectl apply -f deployments.yaml -f service.yaml -n webapp
+
+      # - name: Apply Ingress Configuration
+      #   working-directory: ./kubernetes
+      #   run: kubectl apply -f ingress.yaml
+
+      # - name: Verify Deployment
+      #   run: |
+      #     kubectl get all -n sqldb
+      #     kubectl get all -n webapp
+      #     kubectl get ingress -n webapp
+
