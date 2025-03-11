@@ -41,98 +41,99 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        # working-directory: ./tef_test
-        working-directory: ./terraform
+        working-directory: ./tef_test
+        # working-directory: ./terraform
 
       - name: Terraform Plan
         run: terraform plan
-        working-directory: ./terraform
-        # working-directory: ./tef_test
+        # working-directory: ./terraform
+        working-directory: ./tef_test
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
-        working-directory: ./terraform
-        # working-directory: ./tef_test
+        # working-directory: ./terraform
+        working-directory: ./tef_test
 
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
         run: |
           echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
-        # working-directory: ./tef_test
-        working-directory: ./terraform
+        working-directory: ./tef_test
+        # working-directory: ./terraform
         shell: bash
 
-  docker_build_push:
-    name: Build and Push Docker Images to ECR
-    needs: infrastructure
-    runs-on: ubuntu-latest
-    environment: staging
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      AWS_REGION: us-east-1  # Set the region here
+  # docker_build_push:
+  #   name: Build and Push Docker Images to ECR
+  #   needs: infrastructure
+  #   runs-on: ubuntu-latest
+  #   environment: staging
+  #   env:
+  #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #     AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  #     AWS_REGION: us-east-1  # Set the region here
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v3
 
-      - name: Log in to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+  #     - name: Log in to Amazon ECR
+  #       id: login-ecr
+  #       uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push Docker Images
-        run: |
-          for service in web_app dbs_app; do
-            docker build -t 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:v1 -f Dockerfile_${service} .
-            docker push 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:v1
-          done
+  #     - name: Build and Push Docker Images
+  #       run: |
+  #         for service in web_app dbs_app; do
+  #           docker build -t 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:v1 -f Dockerfile_${service} .
+  #           docker push 097656145156.dkr.ecr.us-east-1.amazonaws.com/$service:v1
+  #         done
 
-  deploy_to_ec2:
-      name: Deploy to EC2 and Run docker-compose
-      needs: [infrastructure, docker_build_push]
-      runs-on: ubuntu-latest
-      environment: staging
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-        AWS_REGION: us-east-1  # Set the region here
-        EC2_KEY: ${{ secrets.EC2_Key }}
-        EC2_PUBLIC_IP: ${{ needs.infrastructure.outputs.ec2_public_ip }}
+  # deploy_to_ec2:
+  #     name: Deploy to EC2 and Run docker-compose
+  #     needs: [infrastructure, docker_build_push]
+  #     runs-on: ubuntu-latest
+  #     environment: staging
+  #     env:
+  #       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  #       AWS_REGION: us-east-1  # Set the region here
+  #       EC2_KEY: ${{ secrets.EC2_Key }}
+  #       EC2_PUBLIC_IP: ${{ needs.infrastructure.outputs.ec2_public_ip }}
 
-      steps:
-        - name: Checkout Repository
-          uses: actions/checkout@v3
+  #     steps:
+  #       - name: Checkout Repository
+  #         uses: actions/checkout@v3
 
-        - name: Print EC2 Public IP
-          run: echo "EC2 Public IP is ${{ env.EC2_PUBLIC_IP }}"
+  #       - name: Print EC2 Public IP
+  #         run: echo "EC2 Public IP is ${{ env.EC2_PUBLIC_IP }}"
 
-        - name: Set up SSH
-          run: |
-            mkdir -p ~/.ssh
-            echo "$EC2_KEY" > ~/.ssh/ec2_key
-            chmod 600 ~/.ssh/ec2_key
-          env:
-            EC2_KEY: ${{ secrets.EC2_Key }}
+  #       - name: Set up SSH
+  #         run: |
+  #           mkdir -p ~/.ssh
+  #           echo "$EC2_KEY" > ~/.ssh/ec2_key
+  #           chmod 600 ~/.ssh/ec2_key
+  #         env:
+  #           EC2_KEY: ${{ secrets.EC2_Key }}
 
-        - name: Wait for EC2 instance to complete setup
-          run: |
-            echo "Waiting for EC2 instance setup to complete..."
-            sleep 180  # Wait for 3 minutes
+  #       - name: Wait for EC2 instance to complete setup
+  #         run: |
+  #           echo "Waiting for EC2 instance setup to complete..."
+  #           sleep 180  # Wait for 3 minutes
 
-        - name: SSH into EC2 and Run docker-compose
-          run: |
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
-              cd /home/ec2-user/app
-              aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
-              docker-compose down
-              docker-compose up -d
-            EOF
+  #       - name: SSH into EC2 and Run docker-compose
+  #         run: |
+  #           ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
+  #             cd /home/ec2-user/app
+  #             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
+  #             docker-compose down
+  #             docker-compose up -d
+  #           EOF
             
   deploy_to_kubernetes:
     name: Deploy to Kubernetes Cluster
-    needs: [infrastructure, docker_build_push]
+    # needs: [infrastructure, docker_build_push]
+    needs: infrastructure
     runs-on: ubuntu-latest
     environment: staging
     env:
@@ -166,7 +167,7 @@ jobs:
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
             
             # Set up Kubernetes Tools, Login ECR Registery, Create NameSpaces
-            cd ./kubernetes/installation
+            cd /home/ec2-user/app/kubernetes/installation
             sh init_kind.sh
             sh ECR-Registery-NameSpaces.sh
 
@@ -176,7 +177,7 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
 
             # Deploy MySQL Database
-            cd /home/ec2-user/app/kubernetes/mysql
+            cd /home/ec2-user/app/kubernetes/mysqldb
             kubectl apply -f deployments.yaml -f pod.yaml -f replicaset.yaml -f service.yaml -n sqldb
 
             # Wait for MySQL readiness
