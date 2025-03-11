@@ -13,4 +13,3 @@ sudo mv ./kubectl /usr/local/bin/
 kind create cluster --config kind.yaml
 
 
-
